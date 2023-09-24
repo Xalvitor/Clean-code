@@ -6,7 +6,8 @@ public class SistemaDePedidos{
 
         List<Pedido> listaPedidos = criarListaDePedidos();
 
-        executarMenu(listaPedidos);
+        //Mostra as opções do menu e é responsavel por aceitar entradas do usuário.
+        criaMenu(listaPedidos);
 
     }
 
@@ -16,14 +17,14 @@ public class SistemaDePedidos{
 
     }
 
-    public static void executarMenu(List<Pedido> listaPedidos){
+    public static void criaMenu(List<Pedido> listaPedidos){
 
         Scanner selecaoDoUsuario = new Scanner(System.in);
 
-        //Mapeando as opções do menu de opções
+        //Mapeanmento do menu de opções.
         Map<Integer, Runnable> opcoesMenu = new HashMap<>();
-        opcoesMenu.put(1, () -> criarNovoPedido(listaPedidos));
-        opcoesMenu.put(2, () -> adicionarItemAPedido(listaPedidos));
+        opcoesMenu.put(1, () -> criarPedido(listaPedidos));
+        opcoesMenu.put(2, () -> adicionarItemAPedido(listaPedidos, selecaoDoUsuario));
         opcoesMenu.put(3, () -> calcularTotalPedido(listaPedidos));
         opcoesMenu.put(4, () -> listarItensPedido(listaPedidos));
         opcoesMenu.put(5, () -> {
@@ -33,31 +34,43 @@ public class SistemaDePedidos{
 
         while (true) {
 
-            eixibirOpcoes();
+            //Responsavel por exibir as opções do menu.
+            eixibirOpcoesDoMenu();
 
+            //Tratamento de erros caso usuário coloque uma entrada inválida.
             try{
 
                 int opcaoEscolhida = selecaoDoUsuario.nextInt();
 
+                //Busca a opção selecionada no mapa.
                 Runnable opcaoSelecionada = opcoesMenu.get(opcaoEscolhida);
 
                 if (opcaoSelecionada != null){
+
                     opcaoSelecionada.run();
+
                 } else {
+
                     System.out.println("Entrada inválida, escolha uma das opções seguintes:");
+
                 }
 
-            } catch (InputMismatchException e) {
-                System.out.println("Entrada em formato inválido, certifiquese de usar números");
+            } catch (InputMismatchException entradaInvalida) {
+
+                //Em caso de entrada em formato inválido, pede para usar números.
+                System.out.println("Entrada em formato inválido, se certifique de usar números");
+
                 selecaoDoUsuario.nextLine();
+
             }
 
         }
 
     }
 
-    public static void eixibirOpcoes(){
+    public static void eixibirOpcoesDoMenu(){
 
+        //Responsavel por exibir as possiveis opções do menu
         System.out.println("1. Criar Pedido");
 
         System.out.println("2. Adicionar Item ao Pedido");
@@ -72,8 +85,9 @@ public class SistemaDePedidos{
 
     }
 
-    public static void criarNovoPedido(List<Pedido> listaPedidos){
+    public static void criarPedido(List<Pedido> listaPedidos){
 
+        //Cria um pedido novo.
         Pedido novoPedido = new Pedido();
 
         listaPedidos.add(novoPedido);
@@ -82,7 +96,7 @@ public class SistemaDePedidos{
 
     }
 
-    public static void adicionarItemAPedido(List<Pedido> listaPedidos){
+    public static void adicionarItemAPedido(List<Pedido> listaPedidos, Scanner selecaoDoUsuario){
 
         if (listaPedidos.isEmpty()) {
 
@@ -91,25 +105,32 @@ public class SistemaDePedidos{
             return;
 
         }
-        Scanner inserirAtributoItem = new Scanner(System.in);
 
         System.out.print("Digite o nome do item: ");
 
-        String nomeItem = inserirAtributoItem.next();
+        String nomeItem = selecaoDoUsuario.next();
 
         System.out.print("Digite o preço do item: ");
 
-        double precoItem = inserirAtributoItem.nextDouble();
+        double precoItem = selecaoDoUsuario.nextDouble();
+
+        //Verificação se o valor do produto é menor ou igual a zero.
+        while (precoItem < 0 || precoItem == 0){
+
+            System.out.println("O preco do produto precisa ser positivo.");
+
+            precoItem = selecaoDoUsuario.nextDouble();
+
+        }
 
         Item novoItem = new Item(nomeItem, precoItem);
 
-        Pedido ultimoPedido = listaPedidos.get(listaPedidos.size() - 1);
+        //Pega o ultimo pedido gerado.
+        Pedido pedidoAtual = retornarPedidoAtual(listaPedidos);
 
-        ultimoPedido.adicionarItem(novoItem);
+        pedidoAtual.adicionarItem(novoItem);
 
         System.out.println("Item adicionado ao pedido.");
-
-        inserirAtributoItem.close();
 
     }
 
@@ -123,9 +144,11 @@ public class SistemaDePedidos{
 
         }
 
-        Pedido pedidoAtual = listaPedidos.get(listaPedidos.size() - 1);
+        //Pega o ultimo pedido gerado.
+        Pedido pedidoAtual = retornarPedidoAtual(listaPedidos);
 
-        if (pedidoAtual.calcularTotal() == 0) {
+        //Verifica se tem algum item no pedido atual.
+        if (pedidoAtual.getItens().isEmpty()) {
 
             System.out.println("Adicione um item primeiro.");
 
@@ -133,9 +156,9 @@ public class SistemaDePedidos{
 
         }
 
-        double total = pedidoAtual.calcularTotal();
+        double precoTotal = pedidoAtual.calcularTotal();
 
-        System.out.println("Total do pedido: " + total);
+        System.out.println("Total do pedido: " + precoTotal);
 
     }
 
@@ -147,20 +170,38 @@ public class SistemaDePedidos{
 
             return;
 
-
         }
 
-        Pedido pedidoParaListar = listaPedidos.get(listaPedidos.size() - 1);
+        //Pega o ultimo pedido gerado.
+        Pedido pedidoParaListar = retornarPedidoAtual(listaPedidos);
 
+        //Pega os itens do pedido
         List<Item> itensDoPedido = pedidoParaListar.getItens();
+
+        if (itensDoPedido.isEmpty()){
+
+            System.out.println("Adicione um item primeiro.");
+
+            return;
+
+        }
 
         System.out.println("Itens do pedido:");
 
-        for (Item i : itensDoPedido) {
-            System.out.println(i.getNome() + ": " + i.getPreco());
+        //Lista o nome e preço de cada item do pedido.
+        for (Item item : itensDoPedido) {
+
+            System.out.println(item.getNome() + ": " + item.getPreco());
+
         }
 
     }
+    public static Pedido retornarPedidoAtual (List<Pedido> listaPedidos){
+
+        return listaPedidos.get(listaPedidos.size() - 1);
+
+    }
+
 }
 
 class Item {
@@ -203,15 +244,15 @@ class Pedido {
 
     public double calcularTotal() {
 
-        double total = 0;
+        double precoTotal = 0;
 
         for (Item item : listaItens) {
 
-            total += item.getPreco();
+            precoTotal += item.getPreco();
 
         }
 
-        return total;
+        return precoTotal;
 
     }
 
@@ -220,4 +261,5 @@ class Pedido {
         return listaItens;
 
     }
+
 }
